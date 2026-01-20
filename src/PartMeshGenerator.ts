@@ -901,8 +901,6 @@ class PartMeshGenerator extends MeshGenerator {
 		var offset = this.measurements.pinHoleOffset;
 		var endMargin = showInteriorEndCap ? this.measurements.interiorEndMargin : 0;
 		var startMargin = showInteriorStartCap ? this.measurements.interiorEndMargin : 0;
-        var offsetStart = (hasOpenStart || showInteriorStartCap ? offset : 0) + startMargin;
-		var offsetEnd = (hasOpenEnd || showInteriorEndCap ? offset : 0) + endMargin;
 		var interiorRadius = this.measurements.interiorRadius;
 
 		// Check if we should apply base pin taper for 3D printing optimization
@@ -922,39 +920,40 @@ class PartMeshGenerator extends MeshGenerator {
 		
 		var taperHeight = this.measurements.basePinTaperHeight;
 
-		this.createCylinder(block, offsetStart, this.measurements.pinHoleRadius, distance - offsetStart - offsetEnd, true);
+		// Calculate offsets - taper adds to the offset, it doesn't replace the lip
+        var offsetStart = (hasOpenStart || showInteriorStartCap ? offset : 0) + startMargin;
+		var offsetEnd = (hasOpenEnd || showInteriorEndCap ? offset : 0) + endMargin;
+		
+		// Add taper height to offsets when applying taper (taper extends INTO the main cylinder area)
+		var mainCylinderStart = offsetStart + (applyStartTaper ? taperHeight : 0);
+		var mainCylinderEnd = offsetEnd + (applyEndTaper ? taperHeight : 0);
+
+		this.createCylinder(block, mainCylinderStart, this.measurements.pinHoleRadius, distance - mainCylinderStart - mainCylinderEnd, true);
 
         if (hasOpenStart || showInteriorStartCap) {
+			// Always create the full lip cylinder at interiorRadius
+			this.createCylinder(block, startMargin, interiorRadius, offset, true);
+			
 			if (applyStartTaper) {
-				// Create tapered cone from interiorRadius at start to pinHoleRadius
-				// The taper replaces part of the interior cylinder
-				var taperStartOffset = startMargin;
-				var cylinderHeight = offset - taperHeight;
-				if (cylinderHeight > 0) {
-					this.createCylinder(block, taperStartOffset, interiorRadius, cylinderHeight, true);
-				}
-				// Create the taper from interiorRadius down to pinHoleRadius
-				this.createCone(block, taperStartOffset + Math.max(0, cylinderHeight), interiorRadius, this.measurements.pinHoleRadius, taperHeight, true);
-				// The ring is not needed when tapering since we connect directly to the pin hole
+				// Create taper from interiorRadius to pinHoleRadius, starting at top of lip going UP
+				// This replaces the flat ring with a gradual slope
+				this.createCone(block, offset + startMargin, interiorRadius, this.measurements.pinHoleRadius, taperHeight, true);
 			} else {
-				this.createCylinder(block, startMargin, interiorRadius, offset, true);
+				// Normal flat ring connecting lip to main cylinder
 				this.createCircleWithHole(block, this.measurements.pinHoleRadius, interiorRadius, offset + startMargin, true);
 			}
         }
 
         if (hasOpenEnd || showInteriorEndCap) {
+			// Always create the full lip cylinder at interiorRadius
+			this.createCylinder(block, distance - offset - endMargin, interiorRadius, offset, true);
+			
 			if (applyEndTaper) {
-				// Create tapered cone from pinHoleRadius to interiorRadius at end
-				var taperEndOffset = distance - offset - endMargin;
-				var cylinderHeight = offset - taperHeight;
-				// Create the taper from pinHoleRadius to interiorRadius
-				this.createCone(block, taperEndOffset, this.measurements.pinHoleRadius, interiorRadius, taperHeight, true);
-				if (cylinderHeight > 0) {
-					this.createCylinder(block, taperEndOffset + taperHeight, interiorRadius, cylinderHeight, true);
-				}
-				// The ring is not needed when tapering since we connect directly from the pin hole
+				// Create taper from pinHoleRadius to interiorRadius, ending at top of lip going DOWN
+				// This replaces the flat ring with a gradual slope
+				this.createCone(block, distance - offset - endMargin - taperHeight, this.measurements.pinHoleRadius, interiorRadius, taperHeight, true);
 			} else {
-				this.createCylinder(block, distance - offset - endMargin, interiorRadius, offset, true);
+				// Normal flat ring connecting main cylinder to lip
 				this.createCircleWithHole(block, this.measurements.pinHoleRadius, interiorRadius, distance - offset - endMargin, false);
 			}
         }
