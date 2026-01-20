@@ -90,6 +90,23 @@
         <details id="catalog">
             <summary>Catalog</summary>
         </details>
+        <details id="printsettings" open>
+            <summary>Print Settings</summary>
+            <div class="group">
+                <label class="checkboxlabel">
+                    <input type="checkbox" id="basePinTaper" checked>
+                    Base Pin Taper
+                </label>
+                <span class="measurementhint">Removes overhangs from bottom of vertical pinholes for better FDM printing.</span>
+            </div>
+            <div class="group">
+                <span class="measurementhint">Print Bed Direction</span>
+                <select id="printBedYDirection">
+                    <option value="-1">-Y (default)</option>
+                    <option value="1">+Y</option>
+                </select>
+            </div>
+        </details>
         <details id="measurements">
             <summary>Measurements</summary>
             <div class="group">

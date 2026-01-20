@@ -92,6 +92,36 @@ class MeshGenerator {
         }
     }
 
+    /**
+     * Creates a cone/tapered cylinder transitioning from startRadius at the start
+     * to endRadius at the end. For interior surfaces (like pinholes), set inverted=true.
+     */
+    protected createCone(block: TinyBlock, offset: number, startRadius: number, endRadius: number, distance: number, inverted = false) {
+        let center = block.getCylinderOrigin(this).plus(block.forward.times(offset));
+        
+        // Calculate the normal angle for the cone surface
+        // The normal points outward perpendicular to the cone surface
+        let radiusDiff = endRadius - startRadius;
+        let slopeAngle = Math.atan2(radiusDiff, distance);
+
+        for (var i = 0; i < this.measurements.subdivisionsPerQuarter; i++) {
+            let v1 = block.getOnCircle(Math.PI / 2 * i / this.measurements.subdivisionsPerQuarter);
+            let v2 = block.getOnCircle(Math.PI / 2 * (i + 1) / this.measurements.subdivisionsPerQuarter);
+            
+            // Normals point perpendicular to the cone surface, tilted based on slope
+            let n1 = v1.times(Math.cos(slopeAngle)).plus(block.forward.times(-Math.sin(slopeAngle)));
+            let n2 = v2.times(Math.cos(slopeAngle)).plus(block.forward.times(-Math.sin(slopeAngle)));
+            
+            this.createQuadWithNormals(
+                center.plus(v1.times(startRadius)),
+                center.plus(v2.times(startRadius)),
+                center.plus(v2.times(endRadius)).plus(block.forward.times(distance)),
+                center.plus(v1.times(endRadius)).plus(block.forward.times(distance)),
+                n1, n2, n2, n1,
+                !inverted);
+        }
+    }
+
     public tinyIndexToWorld(p: number): number {
         let i = Math.floor((p + 1) / 3);
         let j = p - i * 3;

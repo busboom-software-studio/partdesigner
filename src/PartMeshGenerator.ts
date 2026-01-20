@@ -905,16 +905,58 @@ class PartMeshGenerator extends MeshGenerator {
 		var offsetEnd = (hasOpenEnd || showInteriorEndCap ? offset : 0) + endMargin;
 		var interiorRadius = this.measurements.interiorRadius;
 
+		// Check if we should apply base pin taper for 3D printing optimization
+		// This applies to Y-oriented pinholes at the bottom (toward the print bed)
+		// For Y orientation, forward is (0,1,0), so "start" is negative Y and "end" is positive Y
+		// If printBedYDirection is -1, the bottom is at "start"; if 1, the bottom is at "end"
+		var applyStartTaper = PRINT_CONFIG.basePinTaper 
+			&& block.orientation == Orientation.Y 
+			&& hasOpenStart 
+			&& !showInteriorStartCap
+			&& PRINT_CONFIG.printBedYDirection == -1;  // Start is at negative Y (bottom when -1)
+		var applyEndTaper = PRINT_CONFIG.basePinTaper 
+			&& block.orientation == Orientation.Y 
+			&& hasOpenEnd 
+			&& !showInteriorEndCap
+			&& PRINT_CONFIG.printBedYDirection == 1;   // End is at positive Y (bottom when 1)
+		
+		var taperHeight = this.measurements.basePinTaperHeight;
+
 		this.createCylinder(block, offsetStart, this.measurements.pinHoleRadius, distance - offsetStart - offsetEnd, true);
 
         if (hasOpenStart || showInteriorStartCap) {
-            this.createCylinder(block, startMargin, interiorRadius, offset, true);
-            this.createCircleWithHole(block, this.measurements.pinHoleRadius, interiorRadius, offset + startMargin, true);
+			if (applyStartTaper) {
+				// Create tapered cone from interiorRadius at start to pinHoleRadius
+				// The taper replaces part of the interior cylinder
+				var taperStartOffset = startMargin;
+				var cylinderHeight = offset - taperHeight;
+				if (cylinderHeight > 0) {
+					this.createCylinder(block, taperStartOffset, interiorRadius, cylinderHeight, true);
+				}
+				// Create the taper from interiorRadius down to pinHoleRadius
+				this.createCone(block, taperStartOffset + Math.max(0, cylinderHeight), interiorRadius, this.measurements.pinHoleRadius, taperHeight, true);
+				// The ring is not needed when tapering since we connect directly to the pin hole
+			} else {
+				this.createCylinder(block, startMargin, interiorRadius, offset, true);
+				this.createCircleWithHole(block, this.measurements.pinHoleRadius, interiorRadius, offset + startMargin, true);
+			}
         }
 
         if (hasOpenEnd || showInteriorEndCap) {
-            this.createCylinder(block, distance - offset - endMargin, interiorRadius, offset, true);
-            this.createCircleWithHole(block, this.measurements.pinHoleRadius, interiorRadius, distance - offset - endMargin, false);
+			if (applyEndTaper) {
+				// Create tapered cone from pinHoleRadius to interiorRadius at end
+				var taperEndOffset = distance - offset - endMargin;
+				var cylinderHeight = offset - taperHeight;
+				// Create the taper from pinHoleRadius to interiorRadius
+				this.createCone(block, taperEndOffset, this.measurements.pinHoleRadius, interiorRadius, taperHeight, true);
+				if (cylinderHeight > 0) {
+					this.createCylinder(block, taperEndOffset + taperHeight, interiorRadius, cylinderHeight, true);
+				}
+				// The ring is not needed when tapering since we connect directly from the pin hole
+			} else {
+				this.createCylinder(block, distance - offset - endMargin, interiorRadius, offset, true);
+				this.createCircleWithHole(block, this.measurements.pinHoleRadius, interiorRadius, distance - offset - endMargin, false);
+			}
         }
 
         if (showInteriorEndCap) {

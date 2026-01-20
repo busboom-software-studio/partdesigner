@@ -90,6 +90,11 @@ class Editor {
 		document.getElementById("applymeasurements").addEventListener("click", (event: MouseEvent) => this.applyMeasurements());
 		document.getElementById("resetmeasurements").addEventListener("click", (event: MouseEvent) => this.resetMeasurements());
 
+		// Print settings event handlers
+		document.getElementById("basePinTaper").addEventListener("change", (event: Event) => this.onPrintSettingChange());
+		document.getElementById("printBedYDirection").addEventListener("change", (event: Event) => this.onPrintSettingChange());
+		this.initializePrintSettings();
+
 		this.initializeEditor("type", (typeName: string) => this.setType(typeName));
 		this.initializeEditor("orientation", (orientationName: string) => this.setOrientation(orientationName));
 		this.initializeEditor("size", (sizeName: string) => this.setSize(sizeName));
@@ -314,6 +319,17 @@ class Editor {
 	private resetMeasurements() {
 		this.measurements = new Measurements();
 		this.displayMeasurements();
+		this.updateMesh();
+	}
+
+	private initializePrintSettings() {
+		(document.getElementById("basePinTaper") as HTMLInputElement).checked = PRINT_CONFIG.basePinTaper;
+		(document.getElementById("printBedYDirection") as HTMLSelectElement).value = PRINT_CONFIG.printBedYDirection.toString();
+	}
+
+	private onPrintSettingChange() {
+		PRINT_CONFIG.basePinTaper = (document.getElementById("basePinTaper") as HTMLInputElement).checked;
+		PRINT_CONFIG.printBedYDirection = parseInt((document.getElementById("printBedYDirection") as HTMLSelectElement).value) as (-1 | 1);
 		this.updateMesh();
 	}
 

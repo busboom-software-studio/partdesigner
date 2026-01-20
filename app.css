@@ -275,6 +275,36 @@ input[type=radio]:checked + label.radiolabel.z:hover, label.radiolabel.z:hover {
     color: rgb(78, 78, 78);
 }
 
+.checkboxlabel {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-bottom: 4px;
+}
+
+.checkboxlabel input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+#printsettings .measurementhint {
+    font-size: 12px;
+    color: rgb(78, 78, 78);
+    display: block;
+    margin-top: 2px;
+}
+
+#printsettings select {
+    padding: 6px 10px;
+    border-radius: 5px;
+    border: 1px solid rgb(47, 130, 255);
+    background-color: white;
+    margin-top: 4px;
+}
+
 .part-buttons {
     margin-bottom: 10px;
 }
